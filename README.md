@@ -6,6 +6,8 @@ This repository contains the **active saved-memory research code and nonsecret d
 
 Start with the [consolidated research report](RESEARCH_REPORT.md). It brings together the experimental methods, completed results, limitations, evidence boundaries and current work through the available records of 4 October 2026.
 
+For a thesis-style explanation written for nontechnical readers, see the [research report draft](THESIS_REPORT_DRAFT.md). It includes the requested chapters, diagrams, tables, evaluation plan and references while distinguishing completed findings from planned work.
+
 ## What the software does
 
 1. A controlled laboratory session saves a Firefox process core and its corresponding encrypted traffic capture.
@@ -20,6 +22,7 @@ The method requires privileged access to endpoint memory. It does not break TLS 
 | Path | Contents |
 | --- | --- |
 | [Research report](RESEARCH_REPORT.md) | One detailed account of the active work and its evidence. |
+| [Research report draft](THESIS_REPORT_DRAFT.md) | A chapter-based, plain-language thesis report with contents, figures, tables and references. |
 | [Offline memory laboratory](lab/offline_memory/) | Firefox acquisition, ELF core reader, TLS 1.2/1.3 candidate discovery, packet validation, verification and repeatability runners. |
 | [Blind TLS 1.3 study](lab/blind_tls13/) | Multiconnection generator, reference-blind recovery, evaluator and study runner. |
 | [Isolated validation](lab/isolated_tls13/) | Namespace-isolated replay, comparison arms, sensitivity grid, audits, independent traffic check and unseen-build transfer code. |
