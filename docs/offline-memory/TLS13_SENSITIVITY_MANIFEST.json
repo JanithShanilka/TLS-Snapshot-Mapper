@@ -1,0 +1,57 @@
+{
+  "candidate_limits": [
+    25,
+    100,
+    1000
+  ],
+  "historical_manifest_sha256": "a75a7c2fda8ac17c7fba29523158a4ec74cd756a5016d172f686ce502ab57660",
+  "historical_study": "BLIND-FINAL-20260930-A",
+  "methods": [
+    "structured",
+    "entropy",
+    "structure_only",
+    "anderson_nss_adjacent",
+    "xray_full_snapshot_entropy"
+  ],
+  "schema": 1,
+  "search_seconds": [
+    30,
+    180,
+    600
+  ],
+  "seed": "tlkh-sensitivity-20261001-v1",
+  "selected_utc": "2026-10-01",
+  "selector": "lowest SHA-256(seed + colon + case_id) in each predeclared stratum",
+  "strata": {
+    "mismatch": [
+      "Bf7c62e5f8b4c395b",
+      "B99df650c13394b1c"
+    ],
+    "positive-2": [
+      "Bca7eebffa83c08bb",
+      "B401279fb7168553b",
+      "B3e5d12c3f212d8c6",
+      "Bb19f97dea0defa93",
+      "B542d80fe5e1b81c9",
+      "Bef638e6a3663e739",
+      "Bc6de914fa8d8628f"
+    ],
+    "positive-3": [
+      "Be371e197e2c4fe32",
+      "Bf6b0d5478cda43cf",
+      "B6feb5c343b601600",
+      "Bdf429a7def2d7562",
+      "B173be31d7781155d",
+      "B81a8af5e32bd16de",
+      "Bd9679a28bf768a42"
+    ],
+    "unrelated": [
+      "B3fbb05519676796b",
+      "Be74dd048b11c11c0"
+    ],
+    "withheld": [
+      "B2839b2b687d5962f",
+      "Bf0a60d523e48b772"
+    ]
+  }
+}

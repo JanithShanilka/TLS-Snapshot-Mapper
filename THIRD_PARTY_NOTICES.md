@@ -1,0 +1,7 @@
+# Attribution and third-party scope
+
+This project developed from research on [TLSKeyHunter](https://github.com/monkeywave/TLSKeyHunter), described in *All Your TLS Keys Are Belong to Us: A Novel Approach to Live Memory Forensic Key Extraction*. TLSKeyHunter's static fingerprinting, runtime instrumentation concepts and earlier client-random association work belong to its original authors. This repository does not include its Ghidra Java source, Frida hook files or retired live-hook benchmark outputs.
+
+The active saved-memory work also considers the published NSS memory pattern of Anderson and colleagues, the X-Ray-TLS full-snapshot entropy baseline, and the Keys in Flux secret-lifetime study. The [prior-work matrix](docs/offline-memory/TLS13_PRIOR_WORK_MATRIX.md) states the different inputs and targets. In particular, the code here adapts the NSS adjacency pattern to a 48-byte TLS 1.3 candidate and adapts **only** X-Ray-TLS's full-snapshot entropy baseline. It does not reproduce the complete live X-Ray-TLS memory-difference method.
+
+The root MIT license covers only original contributions for which the copyright holder can grant those rights. Third-party works remain under their own terms. The exact upstream TLSKeyHunter base revision and its full redistribution permissions were not established from the earlier local archive; see the [provenance record](docs/governance/UPSTREAM_PROVENANCE.md). No upstream source files were copied into this clean repository.

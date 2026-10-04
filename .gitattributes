@@ -1,0 +1,2 @@
+# Preserve the original campaign CSV bytes and their recorded hashes.
+*.csv -text -whitespace
