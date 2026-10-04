@@ -32,6 +32,7 @@ The strongest completed experiment is a 100-case blind TLS 1.3 study using saved
 - [Figure 1. What the study receives and what it produces](#figure-1)
 - [Figure 2. The separation between recovery and independent checking](#figure-2)
 - [Figure 3. How the experimental groups relate](#figure-3)
+- [Figure 4. How five methods were compared on the same 100 cases](#figure-4)
 
 ## List of Tables (LOT)
 
@@ -41,9 +42,11 @@ The strongest completed experiment is a 100-case blind TLS 1.3 study using saved
 - [Table 4. Experimental datasets](#table-4)
 - [Table 5. Completed repeatability and scenario findings](#table-5)
 - [Table 6. Blind study results](#table-6)
-- [Table 7. Five-method comparison on retained cases](#table-7)
-- [Table 8. Evaluation measures and decision rules](#table-8)
-- [Table 9. Progress and proposed next stages](#table-9)
+- [Table 7. Evidence explaining the entropy-only outcome](#table-7)
+- [Table 8. How each discovery method works](#table-8)
+- [Table 9. Five-method comparison on retained cases](#table-9)
+- [Table 10. Evaluation measures and decision rules](#table-10)
+- [Table 11. Progress and proposed next stages](#table-11)
 
 ---
 
@@ -295,7 +298,7 @@ Five additional 20-case campaigns then tested harder connection states and captu
 
 ### 5.3 Blind multiconnection study
 
-The 100-case blind final is the clearest test of assignment without provided flow labels or payload markers. Recovery was given a core, its case PCAP and pinned metadata; the evaluator held the answer separately. The structured method completed every positive case and correctly handled every control. The broad entropy-only search frequently exhausted its search time and supplied almost none of the required targets [S2].
+The 100-case blind final is the clearest test of assignment without provided flow labels or payload markers. Recovery was given a core, its case PCAP and pinned metadata; the evaluator held the answer separately. The structured method completed every positive case and correctly handled every control. The broad entropy-only search reached its search limit in **all 100 cases** and supplied almost none of the required targets [S2].
 
 <a id="table-6"></a>**Table 6. Blind study results at the declared limits**
 
@@ -310,13 +313,77 @@ The 100-case blind final is the clearest test of assignment without provided flo
 
 The 390 available targets comprise 350 positive-case targets and 40 still-present targets in redacted-memory controls. The structured method recovered those 40 and correctly left the ten removed directions unresolved. It abstained on the ten mismatched and ten unrelated PCAP controls. Both methods avoided false assignments; the entropy-only method failed the redacted controls because it did not recover the required still-present directions. Its search reached the 180-second limit in every final case, so its result is explicitly **budget-bound** [S2].
 
+#### Why the entropy-only result occurred, and what was expected
+
+The historical entropy-only program examined readable captured memory one 48-byte window at a time, advancing **one byte** for each window. It skipped windows in all-zero pages, rejected values with more than six zero bytes or entropy below 4 bits per byte, removed duplicates, and kept the **100 highest-entropy** candidates found before the 180-second deadline. It did not use NSS structure to locate likely secret objects. Those 100 candidates were then passed to the same TLS record-authentication and role-assignment code used by the structured method [S10]. This is a genuine comparator: the program attempted recovery, produced sealed outputs, and was scored by the same evaluator. It was not coded to return failure.
+
+The decisive measurement is **candidate inclusion**: only **1 of 390 available reference secrets** appeared in the entropy-only candidate sets, versus **390 of 390** for the structured search. A traffic test cannot select a correct secret that the search never supplied. The one included secret became one correct target in a positive case, so the traffic-checking stage was capable of accepting an entropy candidate when the candidate was present. This evidence locates the main observed loss at candidate discovery, before final role assignment [S2, S10].
+
+The scan was also incomplete in every final case because it reached its declared 180-second search limit. Searching many overlapping windows in a large Firefox core is expensive, and ranking only by entropy can give high positions to unrelated random-looking memory. These are **plausible contributors**, supported by the algorithm and timeout records, but the public aggregate data do not isolate how much of the 389 missed available targets was caused by scan order, time limit, top-100 ranking, the zero-byte filter or the entropy threshold. A missed target should therefore be described as a **budgeted candidate-discovery miss**, not as proof that the secret was absent from the original core or that entropy methods can never work [S2, S5, S10].
+
+Was failure expected? The ten-case development pilot completed **0 of 6 positive cases** with entropy-only and **6 of 6** with the structured method. The 100-case final was frozen **after** this pilot. The pilot therefore gave a concrete warning that the entropy-only method might perform poorly at the same settings. The final campaign could still run and be scored if entropy succeeded: its freeze gate required the **structured** pilot to pass, while the predeclared strong-contribution rule required at least 63/70 structured positive completions, zero false assignments in the controls, a paired 95% bootstrap interval for the complete-case difference above zero, and no worse false-assignment rate. No project document or external paper establishes that entropy-only *must* fail. The final 0/70 is an observed result under the frozen 180-second/100-candidate design, not a theorem and not an outcome inserted by the evaluator [S2, S11].
+
+There is a design limitation here. This deliberately broad, one-image entropy scan is a weak baseline for a very large browser image under a small candidate cap. Giving both methods the same clock and cap controls resource use, but it does not give them the same domain knowledge: the structured method knows the NSS layout and the entropy method does not. The comparison answers whether that structural knowledge helped under these inputs and limits. It does **not** show superiority over every improved entropy scan or over the complete X-Ray-TLS system, which uses timed memory differences to shrink its search space [5, S5].
+
+<a id="table-7"></a>**Table 7. Evidence explaining the entropy-only outcome**
+
+| Evidence | What it supports | What it does not establish |
+| --- | --- | --- |
+| [Frozen blind-study method and limits](lab/blind_tls13/README.md), [recovery code](lab/blind_tls13/recover.py) | A real entropy scan, 180-second search limit, 100-candidate top list and shared authentication. | A guarantee that the method would fail. |
+| [Ten-case development pilot](lab/blind_tls13/README.md) | Entropy-only had already completed 0/6 positives before the final freeze. | An independent prediction of the exact final 0/70 result. |
+| [Final blind-study results](docs/offline-memory/TLS13_BLIND_STUDY_RESULTS.md) and [aggregate summary](docs/offline-memory/campaigns/BLIND-FINAL-20260930-A/summary.json) | 1/390 available targets entered entropy candidate sets; the search timed out in all 100 cases; there were zero false assignments. | Which single search factor caused each missing secret. |
+| [Twenty-case resource grid](docs/offline-memory/TLS13_SENSITIVITY_RESULTS.md) | Raising the limits changed some entropy-baseline outcomes, but did not make the historical entropy-only arm reliable on the selected cases. | A result for all 100 cases at larger limits, or for a different optimized scanner. |
+| [X-Ray-TLS paper](https://www.eurecom.edu/publication/7588/download/data-publi-7588.pdf) | Its full method uses memory changes around TLS events to reduce the search area; its paper separately describes a full-snapshot baseline. | That the full X-Ray-TLS method failed in this study; it was not run here. |
+
 ### 5.4 Isolation and five-method comparison
 
 The original blind study protected references with account permissions. Its later replay strengthened the boundary by giving each method a separately staged, restricted environment and by sealing its outputs before references were opened. The replay matched the original decisions and scores in 100/100 retained cases. This supports reproducibility of the recorded result on those files; it does not show a second independent 100-case success rate [S3].
 
-The later five-method comparison ran every discovery arm on the same 100 retained images and used the same downstream authentication rule. The structure-only arm matched the historical structured arm for complete positive cases and targets. This indicates that the historical entropy admission filter did not improve the measured recovery on this corpus. The adapted Anderson pattern performed close to the structural methods, while both full-snapshot entropy searches performed poorly at the primary limits. All five arms recorded zero false assignments [S5].
+The five-method comparison asks a narrower question than “which tool is universally best?” It asks **how five ways of making a candidate list perform when the saved core, PCAP, target build, traffic checker, evaluator and declared resources are held fixed**. The first two methods were the frozen original blind-study arms, verified again in isolated replay. The comparison controller checked those sealed replay results, then ran **three new discovery arms** on the same retained inputs. It did not acquire 100 new sessions. All five outcomes can be paired by the same neutral case ID [S3, S5, S10].
 
-<a id="table-7"></a>**Table 7. Five-method comparison on the retained 100 cases, 180 seconds and 100 candidates**
+Each method received the same kind of input: one saved Firefox core and pinned public build metadata for candidate discovery, followed by the matching PCAP for assignment. The candidate search had 180 seconds and a 100-candidate cap; the shared authentication stage had 300 seconds. After each output was sealed, the evaluator used its protected reference to check exact answers. Of the 100 cases, 70 were positive and 30 were controls (ten mismatched core/PCAP pairs, ten unrelated PCAPs and ten redacted-memory cases). A positive case succeeds only if **every** required direction is correct. A redacted control succeeds only if present directions are recovered and the removed direction remains unresolved [S2, S5, S10].
+
+```mermaid
+flowchart TB
+    A[100 retained blind cases<br/>70 positive + 30 controls] --> B[For each case: same saved core + pinned metadata]
+    A --> P[Case PCAP: matching traffic or a declared control]
+    B --> H[Two historical methods from audited replay]
+    B --> N[Three new isolated comparison runs]
+    H --> M1[1. NSS structure + entropy admission]
+    H --> M4[4. Broad entropy-only search]
+    N --> M2[2. NSS structure only]
+    N --> M3[3. Adapted Anderson adjacency]
+    N --> M5[5. Adapted X-Ray full-snapshot entropy]
+    M1 --> C[Same TLS record authentication and role rules<br/>run separately for each method]
+    M2 --> C
+    M3 --> C
+    M4 --> C
+    M5 --> C
+    P --> C
+    C --> D[Separate sealed decisions for each method and case]
+    D --> E[Same protected-reference evaluator]
+    E --> F[Paired case and target scores across five methods]
+```
+
+<a id="figure-4"></a>**Figure 4. How five methods were compared on the same 100 cases.** The diagram is a logical view: each method gets its own candidate list and its own run of the common assignment algorithm. Historical methods came from the audited replay; the three added methods were run by the later comparison controller. The evaluator reads references only after the relevant outputs are sealed.
+
+<a id="table-8"></a>**Table 8. How each discovery method works and what it was expected to test**
+
+| Method | How it finds up to 100 candidate values | What makes it different | Question it tests; no outcome was guaranteed |
+| --- | --- | --- | --- |
+| **1. Historical NSS structure plus entropy** | Finds NSS `CKA_VALUE` attributes, follows each valid pointer to a stored value, requires a suitable entropy score, then keeps 48-byte values for this suite. | Uses the library's pointer/length layout **and** a randomness filter. The historical code also scans 32-byte attribute values before retaining 48-byte values. | Does the original complete candidate-discovery rule recover all required secrets under the blind input contract? |
+| **2. NSS structure only** | Finds valid 48-byte `CKA_VALUE` pointer/length objects and reads their values without the entropy admission filter. | Keeps the structural clue while removing the randomness requirement and the historical code's 32-byte pass. | Is the entropy filter necessary for target inclusion, and does a simpler structural search behave differently? |
+| **3. Adapted Anderson NSS adjacency** | Finds a published NSS marker and expected nearby 48-byte value at one of two fixed offsets. | Reads bytes **next to** a marker rather than following a pointer. Its published source targeted a TLS master secret; this is an explicit TLS 1.3 adaptation [4]. | Can a different known NSS pattern supply most traffic secrets from these saved images? |
+| **4. Historical entropy only** | Examines readable memory in overlapping 48-byte windows, one-byte steps; filters low-entropy/zero-heavy values and retains the top 100 by byte entropy. | Uses no NSS layout or pointer. It scans a much larger search space and can hit its time limit. | Is randomness alone enough to find and assign the targets within the same declared resource envelope? |
+| **5. Adapted X-Ray full-snapshot entropy baseline** | Examines writable captured memory in 48-byte windows at eight-byte steps, scores entropy of the 96 hexadecimal characters, and retains the top 100. | Uses writable-area and alignment restrictions and a **different entropy unit/threshold** (3.6 bits per hex character). It does **not** use X-Ray-TLS's live memory-difference method [5]. | How does this adapted one-image baseline perform with the same assignment and scoring? |
+
+Methods 1–3 contain NSS-specific structural information; methods 4–5 are broad full-snapshot searches. Method 2 is an **ablation** of method 1 for candidate inclusion: it asks what happens when the entropy requirement is removed. Its faster runtime cannot be attributed solely to removing entropy, because its implementation also omits the historical 32-byte scan. Methods 4 and 5 both use entropy but differ in memory regions, step size, scoring unit and original design source. The methods are therefore not five names for the same scan [S5, S10].
+
+The reasonable expectations were **testable hypotheses**, not promised scores. Structural methods were expected to examine fewer plausible places in NSS memory. Removing entropy could show whether that filter excluded any real secrets. The Anderson adaptation tested whether a different NSS clue found the same values. The broad entropy arms tested the cost of searching a whole saved image without the full X-Ray timed-difference context. The pilot warned of poor historical entropy-only performance, but the comparison still measured all five methods and reported their actual results [S5, S11].
+
+The structure-only arm matched the historical structured arm for complete positive cases and targets. This indicates that the historical entropy admission filter did not improve measured target recovery on this corpus. The adapted Anderson pattern performed close to them, so the advantage is **not unique** to the project's exact `CKA_VALUE` pointer rule. Both full-snapshot entropy searches performed poorly at the primary limits. All five arms recorded zero false assignments [S5].
+
+<a id="table-9"></a>**Table 9. Five-method comparison on the retained 100 cases, 180 seconds and 100 candidates**
 
 | Discovery method | Complete positives | Correct positive targets | Mismatch/unrelated abstention | Redacted controls passed | Median positive wall time |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -348,7 +415,7 @@ The completed evaluation already covers fresh TLS 1.2 and TLS 1.3 repeatability,
 
 ### 6.2 Decision rules and measures
 
-<a id="table-8"></a>**Table 8. Evaluation measures and decision rules**
+<a id="table-10"></a>**Table 10. Evaluation measures and decision rules**
 
 | Measure | Definition | Why it matters |
 | --- | --- | --- |
@@ -381,7 +448,7 @@ The main Firefox 136.0.2 saved-memory workflow and its controlled results are co
 
 The dates below are **planning windows**, not claims that future experiments have finished or that a university deadline has been set. Each stage has an evidence gate so the report can be updated without silently converting a plan into a result.
 
-<a id="table-9"></a>**Table 9. Progress and proposed next stages**
+<a id="table-11"></a>**Table 11. Progress and proposed next stages**
 
 | Stage | Status at 4 October 2026 | Planning window | Evidence needed before calling it complete |
 | --- | --- | --- | --- |
@@ -419,3 +486,5 @@ If the remaining stages succeed, the final conclusion can discuss how well the m
 - **[S7]** [Active thesis scope](docs/governance/THESIS_SCOPE.md) and [contribution boundaries](docs/governance/CONTRIBUTION_BOUNDARIES.md).
 - **[S8]** [Offline acquisition and recovery implementation notes](lab/offline_memory/README.md).
 - **[S9]** [Repository provenance](docs/REPOSITORY_PROVENANCE.md), explaining the clean-publication boundary and private evidence that is absent from this checkout.
+- **[S10]** [Historical blind recovery code](lab/blind_tls13/recover.py), [historical NSS ranking code](lab/offline_memory/rank_tls13.py), [three added discovery methods](lab/isolated_tls13/comparators.py), [shared assignment in the comparison](lab/isolated_tls13/compare_recovery.py) and [comparison controller](lab/isolated_tls13/comparison_study.py).
+- **[S11]** [Blind-study pilot, freeze rule and method documentation](lab/blind_tls13/README.md), including the ten-case pilot outcome and the distinction between the structured pilot gate and observed entropy performance.
