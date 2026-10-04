@@ -1,7 +1,9 @@
 # TLS Snapshot Mapper: Saved-Memory Recovery of Firefox TLS Secrets
 
-**Research report draft | Janith Shanilka Geekiyanage Don | 4 October 2026**  
-**Evidence cut-off:** records available in this repository through 4 October 2026.  
+**Research report draft | Janith Shanilka Geekiyanage Don | 4 October 2026**
+
+**Evidence cut-off:** records available in this repository through 4 October 2026.
+
 **Status:** completed findings are separated from proposed work. This is a readable thesis draft, not a claim that the remaining evaluation is complete.
 
 ## Plain-language summary
