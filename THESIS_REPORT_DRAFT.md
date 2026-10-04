@@ -12,6 +12,8 @@ When a browser uses TLS, the traffic on the network is encrypted. The browser mu
 
 The main approach looks for the way Firefox's NSS security library stores candidate values in memory. It then tests those candidates against the saved encrypted records. A candidate is accepted only when the records authenticate; if the evidence does not identify one answer, the system leaves the target unresolved. An independent evaluator checks the answer against a protected server reference **after** the recovery decision has been fixed.
 
+The Firefox client and laboratory server can run on the **same physical computer**, but they still establish real TLS connections over the local loopback network. Each fresh capture starts one or more new connections and handshakes; the TLS libraries derive traffic secrets for those connections rather than loading one fixed test-key file. Section 3.2.1 explains the capture procedure and the deliberate resumption and KeyUpdate exceptions [1, S1, S2, S4].
+
 The strongest completed experiment is a 100-case blind TLS 1.3 study using saved Firefox 136.0.2 memory and two or three overlapping connections. The structured method completed all 70 positive cases, recovered all 350 required positive targets and handled all 30 controls correctly. An entropy-only search completed none of the 70 positive cases within the declared search limit. These are findings from a controlled dataset and a specific machine/software configuration. Results on other Firefox builds and a new confirmation set were still pending at the evidence cut-off [S1–S5].
 
 ---
@@ -173,6 +175,16 @@ The controlled server and packet recorder start before Firefox sends the workloa
 
 The PCAP is captured in the same controlled session. TLS handshakes, connection identities and traffic directions are parsed from it. For the blind study, the recovery process is given no secret log, expected payload marker, server event log, case type or pre-supplied flow-to-secret map [S2].
 
+#### 3.2.1 New TLS connections even when both endpoints use one computer
+
+`localhost` describes **where packets travel**: through the computer's loopback interface. Firefox and the laboratory server are separate processes that communicate through a network socket. They still exchange TLS handshake messages before sending protected application data. The machine address, Firefox build and server certificate are not the application traffic secret. In TLS 1.3, the handshake establishes keying material from which the client and server derive their separate traffic secrets. In the tested TLS 1.2 ECDHE setting, each new handshake establishes a master secret through its key exchange; the Hello messages also carry connection-specific random values [1, 7]. Thus using the same machine, or even the same server certificate, does not mean reusing one stored traffic key.
+
+For each **fresh capture case**, the acquisition program creates a new case directory and disposable Firefox profile, starts a laboratory server and Firefox, records the loopback packets, and captures the resulting Firefox memory. The baseline and blind TLS 1.3 server configurations disable session tickets, and the browser disables 0-RTT, so those cases do not intentionally resume a previous TLS session. In the blind study, each of the two or three overlapping connections is accepted as a separate socket and performs its own TLS handshake, even though the connections can coexist in one Firefox process. The server records the resulting secrets in a protected reference file for **later evaluation**; that file is not given to the recovery process [S1, S2].
+
+In simple terms, *case A* starts handshake A and obtains its client and server traffic secrets; *case B* starts another handshake and obtains secrets for that new connection. The experiment does not plant one fixed traffic secret in Firefox for all cases. The public summaries report fresh captures and exact reference matches, but do not include a separate published audit comparing every protected secret value across cases. This section therefore explains the protocol and acquisition design rather than claiming that a cross-case uniqueness audit was completed [S1, S2].
+
+Two deliberately different situations must be kept separate. In the **resumption scenario**, the second connection uses a ticket from the first as an input to a new handshake; the study targets the second connection's traffic secrets. In the **KeyUpdate scenario**, an existing connection derives a later secret generation without opening a new connection. Finally, replay, the five-method comparison and resource-grid runs only reanalyse previously saved core and PCAP files: they generate no new TLS connection or traffic secret [1, S4, S5].
+
 ### 3.3 Discovering candidate secrets
 
 The principal search looks for a fixed `CKA_VALUE` attribute shape used by NSS. It follows the stored pointer and length to readable bytes and keeps values of the length needed by the tested suite. For TLS 1.3 with SHA-384, the application traffic secret is 48 bytes. Identical values are deduplicated. The output at this point is only a **candidate list**: memory structure, length and a random-looking appearance are reasons to inspect a value, never proof of its role [S1, S5].
@@ -226,6 +238,8 @@ The public repository contains source code, protocols and nonsecret summaries. R
 ### 4.1 Units of analysis and datasets
 
 A **case** is one declared capture and scoring task. A positive case has required secret targets present; a control deliberately tests a condition in which some or all assignments should remain unresolved. Several candidate checks or several methods on one case do not create new independent cases. The design progressed from feasibility pilots to fresh repeatability sets, extended scenario sets, a blind final set and replay-based comparisons [S1–S5].
+
+Here, **fresh** means a new acquisition with a new TLS handshake. Running another search method on the same saved memory and PCAP is a repeated analysis of that case, not another fresh connection (Section 3.2.1).
 
 <a id="table-4"></a>**Table 4. Experimental datasets**
 
@@ -474,6 +488,7 @@ If the remaining stages succeed, the final conclusion can discuss how well the m
 4. B. Anderson, A. Chi, S. Dunlop and D. McGrew, [“Limitless HTTP in an HTTPS World: Inferring the Semantics of the HTTPS Protocol without Decryption”](https://arxiv.org/abs/1805.11544), arXiv:1805.11544, 2018. Section 3.1.4 describes memory-based TLS key extraction and the NSS adjacency pattern adapted in this project's comparison.
 5. F. Moriconi, O. Levillain, A. Francillon and R. Troncy, [“X-Ray-TLS: Transparent Decryption of TLS Sessions by Extracting Session Keys from Memory”](https://www.eurecom.fr/en/publication/7588), *ACM ASIACCS*, 2024, DOI: [10.1145/3634737.3637654](https://doi.org/10.1145/3634737.3637654). Used to distinguish its full timed-snapshot method from the full-snapshot baseline adapted here.
 6. FKIE-CAD, [*Keys in Flux: Lifespan of Cryptographic Secrets in Memory* research artifacts](https://github.com/fkie-cad/keys-in-flux-paper-material), GitHub, accessed 4 October 2026. Used as context for secret lifetime; complete paper metadata was not available in the artifact's citation section at this cut-off.
+7. T. Dierks and E. Rescorla, [*The Transport Layer Security (TLS) Protocol Version 1.2*, RFC 5246](https://www.rfc-editor.org/rfc/rfc5246), Internet Engineering Task Force, 2008. Used for the TLS 1.2 handshake and master-secret derivation.
 
 ### This project's study records
 
